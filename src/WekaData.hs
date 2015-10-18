@@ -12,18 +12,34 @@ Works with weka *.arff data and files.
 module WekaData (
 
   RawWekaData(..)
-, WekaDataAttribute(..)
+, WekaDataAttribute(WekaAttrNum, WekaAttrNom)
+
+, wekaAttributeName
+, findInMap
+, findInMapWithAttr
+, lookupInMap
+, lookupInMapWithAttr
+, lookupInSet
+
 , readWekaData
 
 , wekaData2Sparse
 
 ) where
 
+import Data.Typeable
+import Data.Function (on)
 import Data.List
 import Data.List.Split
 import Data.Char
 import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.Map (Map)
+import Data.Set (Set)
+import Data.Maybe (fromMaybe)
 import Control.Applicative
+
+-----------------------------------------------------------------------------
 
 -- | Data read from Weka @*.arff@ files.
 data RawWekaData = RawWekaData { rwdName      :: String              -- ^ relation
@@ -32,11 +48,55 @@ data RawWekaData = RawWekaData { rwdName      :: String              -- ^ relati
                                }
                     deriving Show
 
+-- | Weka attribute.
 data WekaDataAttribute = WekaAttrNum String          -- ^ numeric attribute
                        | WekaAttrNom String [String] -- ^ nominal attribute with its domain
-                    deriving Show
+                       | WekaAttrExtractor String    -- ^ an extractor intented to be used for sets and maps
+                    deriving (Show, Typeable)
+
+instance Eq WekaDataAttribute where
+    x == y = wekaAttributeName x == wekaAttributeName y
+
+instance Ord WekaDataAttribute where
+    compare = compare `on` wekaAttributeName
+
+getFromMaybe name = fromMaybe (error $ "attribute '" ++ name ++ "' not found")
+
+-- | Find an attribute by name in a map with attribute keys.
+findInMap :: String -> Map WekaDataAttribute a -> a
+findInMap name = getFromMaybe name . lookupInMap name
+-- fromMaybe (error $ "attribute '" ++ name ++ "' not found") . lookupInMap name
+
+-- | Try to find an attribute by name in a map with attribute keys.
+lookupInMap :: String -> Map WekaDataAttribute a -> Maybe a
+lookupInMap name = Map.lookup (WekaAttrExtractor name)
+
+-- | Find an attribute by name in a map with attribute keys.
+findInMapWithAttr :: String -> Map WekaDataAttribute a -> (WekaDataAttribute, a)
+findInMapWithAttr name = getFromMaybe name . lookupInMapWithAttr name
 
 
+lookupElem :: (Int -> a -> b) -> (WekaDataAttribute -> a -> Maybe Int) -> String -> a -> Maybe b
+lookupElem elemAt lookupIndex name x =
+    fmap (`elemAt` x) (lookupIndex (WekaAttrExtractor name) x)
+
+
+-- | Try to find an attribute by name in a map with attribute keys.
+lookupInMapWithAttr :: String -> Map WekaDataAttribute a -> Maybe (WekaDataAttribute, a)
+lookupInMapWithAttr = lookupElem Map.elemAt Map.lookupIndex
+
+-- | Try to find an attribute by name in a set of attributes.
+lookupInSet :: String -> Set WekaDataAttribute -> Maybe WekaDataAttribute
+lookupInSet = lookupElem Set.elemAt Set.lookupIndex
+
+
+-- | Get name of a 'WekaDataAttribute'.
+wekaAttributeName (WekaAttrNum name)   = name
+wekaAttributeName (WekaAttrNom name _) = name
+
+
+
+-----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.
 readWekaData :: String          -- ^ file name
              -> IO RawWekaData

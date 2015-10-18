@@ -91,9 +91,9 @@ lookupInSet = lookupElem Set.elemAt Set.lookupIndex
 
 
 -- | Get name of a 'WekaDataAttribute'.
-wekaAttributeName (WekaAttrNum name)   = name
-wekaAttributeName (WekaAttrNom name _) = name
-
+wekaAttributeName (WekaAttrNum name)       = name
+wekaAttributeName (WekaAttrNom name _)     = name
+wekaAttributeName (WekaAttrExtractor name) = name
 
 
 -----------------------------------------------------------------------------

@@ -15,6 +15,8 @@ module WekaData (
 , WekaDataAttribute(WekaAttrNum, WekaAttrNom)
 
 , wekaAttributeName
+, wekaAttribute2str
+
 , findInMap
 , findInMapWithAttr
 , lookupInMap
@@ -46,13 +48,19 @@ data RawWekaData = RawWekaData { rwdName      :: String              -- ^ relati
                                , rwdAttrs     :: [WekaDataAttribute] -- ^ attributes
                                , rawWekaData  :: [[String]]          -- ^ raw data
                                }
-                    deriving Show
+
+instance (Show WekaDataAttribute) =>
+    Show RawWekaData where
+        show (RawWekaData name attrs dta) =
+            "RawWekaData " ++ name ++ "\n" ++
+            "Attributes:\n\t" ++ intercalate "\n\t" (map wekaAttribute2str attrs) ++
+            "Data:\n" ++ intercalate "\n\t" (map show dta)
 
 -- | Weka attribute.
 data WekaDataAttribute = WekaAttrNum String          -- ^ numeric attribute
                        | WekaAttrNom String [String] -- ^ nominal attribute with its domain
                        | WekaAttrExtractor String    -- ^ an extractor intented to be used for sets and maps
-                    deriving (Show, Typeable)
+                    deriving Typeable
 
 instance Eq WekaDataAttribute where
     x == y = wekaAttributeName x == wekaAttributeName y
@@ -95,6 +103,9 @@ wekaAttributeName (WekaAttrNum name)       = name
 wekaAttributeName (WekaAttrNom name _)     = name
 wekaAttributeName (WekaAttrExtractor name) = name
 
+wekaAttribute2str (WekaAttrNum name)        = "Numeric " ++ name
+wekaAttribute2str (WekaAttrNom name domain) = "Nominal " ++ name ++ " " ++ show domain
+wekaAttribute2str (WekaAttrExtractor name)  = "Extractor " ++ name
 
 -----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.
@@ -135,7 +146,8 @@ dropSpaces = dropWhile isSpace
 
 -- | Reads weka attribute from a line.
 readWekaAttr :: String -> WekaDataAttribute
-readWekaAttr line | head l' == '{'            = WekaAttrNom name domain
+readWekaAttr line | null l'                   = error $ "readWekaAttr: empty attribute: " ++ show line
+                  | head l' == '{'            = WekaAttrNom name domain
                   | "numeric" `isPrefixOf` l' = WekaAttrNum name
                   | otherwise = error $ show l'
     where l    = dropSpaces $ drop (length "@attribute ") line

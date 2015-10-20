@@ -4,6 +4,7 @@ cabal-version: 1.12
 build-type: Simple
 license: MIT
 license-file: "LICENSE"
+extra-source-files: README.md
 
 library
     build-depends:   base >=4.7 && <4.8

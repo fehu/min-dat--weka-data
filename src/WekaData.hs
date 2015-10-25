@@ -30,6 +30,8 @@ module WekaData (
 
 , wekaData2Sparse
 
+, wekaSparse2WEntries
+
 ) where
 
 import Data.Typeable
@@ -183,7 +185,11 @@ wekaData2Sparse (RawWekaData  _ attrs dta) =
           sd   = Map.fromList singletonDomains
 
 
-
+-- | Converts /sparse/ weka data to a list of 'WekaEntries's.
+wekaSparse2WEntries :: [WekaDataAttribute] -> [[String]] -> [WekaEntry]
+wekaSparse2WEntries attrs sdata = do
+    entry <- sdata
+    return . WEntry . Set.fromList . map WVal $ zip attrs entry
 
 
 

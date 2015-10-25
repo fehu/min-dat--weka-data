@@ -112,8 +112,8 @@ wekaAttribute2str (WekaAttrExtractor name)  = "Extractor " ++ name
 
 -----------------------------------------------------------------------------
 
-newtype WekaVal   = WVal (WekaDataAttribute, String)
-newtype WekaEntry = WEntry (Set WekaVal)
+newtype WekaVal   = WVal (WekaDataAttribute, String) deriving (Eq, Ord)
+newtype WekaEntry = WEntry (Set WekaVal)             deriving (Eq, Ord)
 
 -----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.

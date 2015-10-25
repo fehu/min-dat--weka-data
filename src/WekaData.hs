@@ -14,6 +14,9 @@ module WekaData (
   RawWekaData(..)
 , WekaDataAttribute(WekaAttrNum, WekaAttrNom)
 
+, WekaVal(..)
+, WekaEntry(..)
+
 , wekaAttributeName
 , wekaAttribute2str
 
@@ -106,6 +109,11 @@ wekaAttributeName (WekaAttrExtractor name) = name
 wekaAttribute2str (WekaAttrNum name)        = "Numeric " ++ name
 wekaAttribute2str (WekaAttrNom name domain) = "Nominal " ++ name ++ " " ++ show domain
 wekaAttribute2str (WekaAttrExtractor name)  = "Extractor " ++ name
+
+-----------------------------------------------------------------------------
+
+newtype WekaVal   = WVal (WekaDataAttribute, String)
+newtype WekaEntry = WEntry (Set WekaVal)
 
 -----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.

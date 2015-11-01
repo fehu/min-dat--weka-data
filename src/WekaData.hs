@@ -31,6 +31,7 @@ module WekaData (
 , wekaData2Sparse
 
 , wekaSparse2WEntries
+, wekaData2SparseWEntries
 
 ) where
 
@@ -191,6 +192,9 @@ wekaSparse2WEntries attrs sdata = do
     entry <- sdata
     return . WEntry . Set.fromList . map WVal $ zip attrs entry
 
+wekaData2SparseWEntries :: RawWekaData -> [WekaEntry]
+wekaData2SparseWEntries raw = wekaSparse2WEntries (rwdAttrs raw)
+                                                  (wekaData2Sparse raw)
 
 
 

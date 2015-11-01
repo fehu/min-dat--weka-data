@@ -21,7 +21,7 @@ instance Show WekaDataAttribute where show = wekaAttributeName
 -- | Shows /short attribute name/ -> /value/.
 --   Defined in "WekaData.Show.Name".
 instance Show WekaVal where
-    show (WVal (attr, val)) = show attr ++ " -> " ++ show val
+    show (WVal (attr, val)) = show attr ++ "->" ++ val
 
 -- | Shows /short attribute name/ -> /value/ pairs, divided by commas.
 --   Defined in "WekaData.Show.Name".

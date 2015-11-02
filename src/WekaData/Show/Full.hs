@@ -20,7 +20,7 @@ instance Show WekaDataAttribute where show = wekaAttribute2str
 
 -- | Shows /value/: /all attribute fields/. Defined in "WekaData.Show.Full".
 instance Show WekaVal where
-    show (WVal (attr, val)) = show val ++ ": " ++ show attr
+    show (WVal attr val) = show val ++ ": " ++ show attr
 
 -- | Shows /value/: /all attribute fields/, divided by new lines.
 --   Defined in "WekaData.Show.Full".

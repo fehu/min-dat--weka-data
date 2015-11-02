@@ -11,27 +11,33 @@ Works with weka *.arff data and files.
 
 module WekaData (
 
+-- * Raw Data
   RawWekaData(..)
+
+-- * Attributes
 , WekaDataAttribute(WekaAttrNum, WekaAttrNom)
-
-, WekaVal(..)
-, WekaEntry(..)
-
 , wekaAttributeName
 , wekaAttribute2str
 
+-- * Search by attr. name
 , findInMap
 , findInMapWithAttr
 , lookupInMap
 , lookupInMapWithAttr
 , lookupInSet
 
+
+-- * *.arff files
 , readWekaData
 
+-- * Data Containers
+, WekaVal (WVal)
+, WekaEntry(..)
 , wekaData2Sparse
 
-, wekaSparse2WEntries
-, wekaData2SparseWEntries
+-- * Search 'WekaVal' by attr. name
+, lookupWValInMap
+, lookupWValInSet
 
 ) where
 
@@ -40,6 +46,7 @@ import Data.Function (on)
 import Data.List
 import Data.List.Split
 import Data.Char
+import Data.Ord
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.Map (Map)
@@ -115,8 +122,34 @@ wekaAttribute2str (WekaAttrExtractor name)  = "Extractor " ++ name
 
 -----------------------------------------------------------------------------
 
-newtype WekaVal   = WVal (WekaDataAttribute, String) deriving (Eq, Ord, Typeable)
-newtype WekaEntry = WEntry (Set WekaVal)             deriving (Eq, Ord, Typeable)
+data WekaVal = WVal WekaDataAttribute String
+             | WValExtractor String
+             deriving Typeable
+
+instance Eq WekaVal where
+    (WVal a1 v1) == (WVal a2 v2)        = a1 == a2 && v1 == v2
+    (WVal a v) == (WValExtractor n)     = wekaAttributeName a == n
+    e@(WValExtractor _) == v@(WVal _ _) = v == e
+
+instance Ord WekaVal where
+    (WVal a1 v1) `compare` (WVal a2 v2)        | a1 == a2  = v1 `compare` v2
+                                               | otherwise = a1 `compare` a2
+    (WVal a _) `compare` (WValExtractor n)     = wekaAttributeName a `compare` n
+    e@(WValExtractor n) `compare` v@(WVal a _) = n `compare` wekaAttributeName a
+
+lookupWVal elemAt lookupIndex name x =
+    fmap (`elemAt` x) (lookupIndex (WValExtractor name) x)
+
+
+-- | Try to find a 'WekaVal' by attribute name in a set of 'WekaVal's.
+lookupWValInMap :: String -> Map WekaVal v -> Maybe WekaVal
+lookupWValInMap = lookupWVal (\x -> fst . Map.elemAt x) Map.lookupIndex
+
+-- | Try to find a 'WekaVal' by attribute name in a set of 'WekaVal's.
+lookupWValInSet :: String -> Set WekaVal -> Maybe WekaVal
+lookupWValInSet = lookupWVal Set.elemAt Set.lookupIndex
+
+newtype WekaEntry = WEntry (Set WekaVal) deriving (Eq, Ord, Typeable)
 
 -----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.
@@ -172,29 +205,13 @@ readWekaAttr line | null l'                   = error $ "readWekaAttr: empty att
 -----------------------------------------------------------------------------
 -- | in the data: __foreach__ nominal attribute with /singleton/ domain:
 --
---        1. replace the domain value by attribute name
---        2. drop the '?' items
-wekaData2Sparse :: RawWekaData -> [[String]]
-wekaData2Sparse (RawWekaData  _ attrs dta) =
-    do its <- dta
-       return $ do (it, i) <- zip its [0..]
-                   case Map.lookup i sd of Just name -> case it of "?" -> []
-                                                                   _   -> [name]
-                                           _         -> [it]
-    where singletonDomains = do (WekaAttrNom name [_], i) <- zip attrs [0..]
-                                return (i, name)
-          sd   = Map.fromList singletonDomains
-
-
--- | Converts /sparse/ weka data to a list of 'WekaEntries's.
-wekaSparse2WEntries :: [WekaDataAttribute] -> [[String]] -> [WekaEntry]
-wekaSparse2WEntries attrs sdata = do
-    entry <- sdata
-    return . WEntry . Set.fromList . map WVal $ zip attrs entry
-
-wekaData2SparseWEntries :: RawWekaData -> [WekaEntry]
-wekaData2SparseWEntries raw = wekaSparse2WEntries (rwdAttrs raw)
-                                                  (wekaData2Sparse raw)
+--        1. drop the '?' items
+--        2. create a 'WekaEntry' for the rest of attributes
+wekaData2Sparse :: RawWekaData -> [WekaEntry]
+wekaData2Sparse (RawWekaData  _ attrs dta) = do
+    entry <- dta
+    return . WEntry . Set.fromList . map (uncurry WVal)
+           . filter ((/=) "?" . snd) $ zip attrs entry
 
 
 

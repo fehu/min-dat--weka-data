@@ -30,6 +30,8 @@ module WekaData (
 -- * *.arff files
 , readWekaData
 
+, wekaDataFromLines
+
 -- * Data Containers
 , WekaVal (WVal)
 , WekaEntry(..)
@@ -157,7 +159,10 @@ readWekaData :: String          -- ^ file name
              -> IO RawWekaData
 readWekaData filename = do lines <- splitOn "\n" <$> readFile filename
                                  -- same as fmap (splitOn "\n") (readFile filename)
-                           return $ readWekaData' lines Nothing [] []
+                           return $ wekaDataFromLines lines
+
+wekaDataFromLines :: [String] -> RawWekaData
+wekaDataFromLines lines = readWekaData' lines Nothing [] []
 
 readWekaData' :: [String] -> Maybe String -> [WekaDataAttribute] -> [[String]] -> RawWekaData
 

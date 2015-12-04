@@ -15,6 +15,7 @@ library
     exposed-modules: WekaData
                      WekaData.Show.Name
                      WekaData.Show.Full
+                     WekaData.Show.Mixed
     default-extensions: DeriveDataTypeable
                         FlexibleContexts
                         UndecidableInstances

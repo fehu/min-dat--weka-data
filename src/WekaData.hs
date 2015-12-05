@@ -25,6 +25,7 @@ module WekaData (
 , lookupInMap
 , lookupInMapWithAttr
 , lookupInSet
+, lookupInList
 
 
 -- * *.arff files
@@ -111,6 +112,9 @@ lookupInMapWithAttr = lookupElem Map.elemAt Map.lookupIndex
 -- | Try to find an attribute by name in a set of attributes.
 lookupInSet :: String -> Set WekaDataAttribute -> Maybe WekaDataAttribute
 lookupInSet = lookupElem Set.elemAt Set.lookupIndex
+
+lookupInList :: String -> [WekaDataAttribute] -> Maybe WekaDataAttribute
+lookupInList = lookupElem (flip (!!)) elemIndex
 
 
 -- | Get name of a 'WekaDataAttribute'.

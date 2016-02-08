@@ -35,12 +35,17 @@ module WekaData (
 
 -- * Data Containers
 , WekaVal (WVal)
+, wVal2Pair
+, getWVal
 , WekaEntry(..)
 , wekaData2Sparse
 
 -- * Search 'WekaVal' by attr. name
 , lookupWValInMap
 , lookupWValInSet
+
+, stringifyWekaAttr
+, stringifyWekaData
 
 ) where
 
@@ -155,7 +160,15 @@ lookupWValInMap = lookupWVal (\x -> fst . Map.elemAt x) Map.lookupIndex
 lookupWValInSet :: String -> Set WekaVal -> Maybe WekaVal
 lookupWValInSet = lookupWVal Set.elemAt Set.lookupIndex
 
-newtype WekaEntry = WEntry (Set WekaVal) deriving (Eq, Ord, Typeable)
+data WekaEntry = WEntry (Set WekaVal)
+               | WSortedEntry [WekaVal]
+              deriving (Eq, Ord, Typeable)
+
+extractWEntry (WEntry set) = Set.toList set
+extractWEntry (WSortedEntry l) = l
+
+wVal2Pair (WVal a v) = (a, v)
+getWVal (WVal _ v) = v
 
 -----------------------------------------------------------------------------
 -- | Tries to read a *.arff file.
@@ -222,6 +235,22 @@ wekaData2Sparse (RawWekaData  _ attrs dta) = do
     return . WEntry . Set.fromList . map (uncurry WVal)
            . filter ((/=) "?" . snd) $ zip attrs entry
 
+
+-----------------------------------------------------------------------------
+
+stringifyWekaAttr :: WekaDataAttribute -> String
+stringifyWekaAttr (WekaAttrNum name) = "@attribute " ++ show name ++ " numeric"
+stringifyWekaAttr (WekaAttrNom name domain) = "@attribute " ++ show name
+                                           ++ " {" ++ intercalate "," domain ++ "}"
+
+
+stringifyWekaData :: String -> [WekaEntry] -> String
+stringifyWekaData relName entries@(e:_) = intercalate "\n" $
+        rel : "" : attrs ++ "" : "@data" : vals
+    where rel   = "@relation " ++ show relName
+          (attrs', _) = unzip . map wVal2Pair $ extractWEntry e
+          attrs = map stringifyWekaAttr attrs'
+          vals  = map (intercalate "," . map getWVal . extractWEntry) entries
 
 
 

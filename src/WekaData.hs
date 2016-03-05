@@ -240,8 +240,8 @@ wekaData2Sparse (RawWekaData  _ attrs dta) = do
 
 stringifyWekaAttr :: WekaDataAttribute -> String
 stringifyWekaAttr (WekaAttrNum name) = "@attribute " ++ show name ++ " numeric"
-stringifyWekaAttr (WekaAttrNom name domain) = "@attribute " ++ show name
-                                           ++ " {" ++ intercalate "," domain ++ "}"
+stringifyWekaAttr (WekaAttrNom name domain) = "@attribute " ++ show name ++ " {" ++
+                                              intercalate "," (map quoteIfNeeded domain) ++ "}"
 
 
 stringifyWekaData :: String -> [WekaEntry] -> String
@@ -250,8 +250,9 @@ stringifyWekaData relName entries@(e:_) = intercalate "\n" $
     where rel   = "@relation " ++ show relName
           (attrs', _) = unzip . map wVal2Pair $ extractWEntry e
           attrs = map stringifyWekaAttr attrs'
-          vals  = map (intercalate "," . map getWVal . extractWEntry) entries
+          vals  = map (intercalate "," . map (quoteIfNeeded . getWVal) . extractWEntry) entries
 
 
+quoteIfNeeded s = if any isSpace s then '\'' : s ++ "'" else s
 
 
